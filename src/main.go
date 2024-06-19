@@ -7,11 +7,13 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type GraphQL struct {
-	Query     string                 `json:"query"`
-	Variables map[string]interface{} `json:"variables"`
+	Query     string
+	Variables map[string]interface{}
 }
 
 func query_leetcode_graphql_api(request *GraphQL) ([]byte, error) {
@@ -41,6 +43,8 @@ func query_leetcode_graphql_api(request *GraphQL) ([]byte, error) {
 // }
 
 func main() {
+	godotenv.Load("../.env")
+
 	var leetcode_username string
 	var email string
 
