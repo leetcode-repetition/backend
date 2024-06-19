@@ -1,0 +1,9 @@
+query ($username: String!) {
+    recentSubmissionList(username: $username, limit: 20) {
+        title
+        titleSlug
+        timestamp
+        statusDisplay
+        lang
+    }
+}
