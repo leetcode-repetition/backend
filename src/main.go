@@ -26,7 +26,6 @@ func query_leetcode_graphql_api(request *GraphQL) ([]byte, error) {
 	defer response.Body.Close()
 
 	response_body, _ := io.ReadAll(response.Body)
-	// fmt.Println(string(response_body))
 	return response_body, nil
 }
 
@@ -45,16 +44,18 @@ func query_leetcode_graphql_api(request *GraphQL) ([]byte, error) {
 func main() {
 	godotenv.Load("../.env")
 
-	var leetcode_username string
+	var username string
 	var email string
 
 	fmt.Print("Enter LeetCode username: ")
-	fmt.Scanln(&leetcode_username)
+	fmt.Scanln(&username)
 
 	fmt.Print("Enter email: ")
 	fmt.Scanln(&email)
 
-	// add_username_and_email_to_database(leetcode_username, email)
+	// check if the username exists.
+
+	add_row_to_database(email, username)
 
 	data, _ := os.ReadFile("graphql/get_recent_submissions.graphql")
 	fmt.Println(string(data))
@@ -67,6 +68,5 @@ func main() {
 	// }
 
 	// query_leetcode_graphql_api(request)
-	// get_emails_and_problems(leetcode_username)
-	send_email(get_emails_and_problems(leetcode_username))
+	// send_email(get_row(email))
 }

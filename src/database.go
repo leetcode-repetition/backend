@@ -17,16 +17,10 @@ type LeetCodeProblem struct {
 	RepeatDate     time.Time
 }
 
-type EmailListResponse struct {
-	EmailList []string
-}
-
-type Email struct {
-	Emails []string
-}
-
-type Problem struct {
-	Problems []map[string]string
+type Row struct {
+	Email    string              `json:"email"`
+	Username string              `json:"username"`
+	Problems []map[string]string `json:"problems"`
 }
 
 func create_supabase_client() *supabase.Client {
@@ -37,57 +31,33 @@ func create_supabase_client() *supabase.Client {
 	return client
 }
 
-func add_username_and_email_to_database(leetcode_username string, new_email string) {
+func add_row_to_database(email string, username string) {
+	row := Row{
+		Email:    email,
+		Username: username,
+		Problems: []map[string]string{
+			{
+				"test": "solution1",
+			},
+			{
+				"test": "solution2",
+			},
+		},
+	}
+
 	client := create_supabase_client()
 	table := os.Getenv("SUPABASE_TABLE")
-
-	found_username, _, _ := client.From(table).Select("username", "", false).Eq("username", leetcode_username).Execute()
-
-	if string(found_username) == "[]" {
-		data := map[string]interface{}{
-			"username":   leetcode_username,
-			"email_list": []string{new_email},
-			"problems":   []LeetCodeProblem{},
-		}
-		client.From(table).Insert(data, false, "Failure", "Success", "1").Execute()
-		return
-	}
-
-	var old_emails []EmailListResponse
-	var updatedEmails []string
-
-	response, _, _ := client.From(table).Select("emails", "", false).Eq("username", leetcode_username).Execute()
-	json.Unmarshal(response, &old_emails)
-
-	for _, old_email := range old_emails {
-		updatedEmails = append(updatedEmails, old_email.EmailList...)
-	}
-	updatedEmails = append(updatedEmails, new_email)
-
-	data := map[string]interface{}{
-		"email_list": updatedEmails,
-	}
-	client.From(table).Update(data, "", "").Eq("username", leetcode_username).Execute()
+	client.From(table).Upsert(row, "email", "success", "").Execute()
 }
 
-func get_emails_and_problems(leetcode_username string) ([]string, []map[string]string) {
+func get_row(email string) Row {
 	client := create_supabase_client()
 	table := os.Getenv("SUPABASE_TABLE")
 
-	emails_data, _, _ := client.From(table).Select("emails", "", false).Eq("username", leetcode_username).Execute()
-	problems_data, _, _ := client.From(table).Select("problems", "", false).Eq("username", leetcode_username).Execute()
+	raw_data, _, _ := client.From(table).Select("*", "", false).Eq("email", email).Execute()
+	var infoStruct []Row
 
-	var emailStruct []Email
-	var problemStruct []Problem
+	json.Unmarshal([]byte(string(raw_data)), &infoStruct)
 
-	json.Unmarshal([]byte(string(emails_data)), &emailStruct)
-	json.Unmarshal([]byte(string(problems_data)), &problemStruct)
-
-	emails := emailStruct[0].Emails
-	problems := problemStruct[0].Problems
-
-	fmt.Println(emails)
-	fmt.Println(problems)
-
-	return emails, problems
+	return infoStruct[0]
 }
