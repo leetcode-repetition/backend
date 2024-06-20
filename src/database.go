@@ -18,7 +18,15 @@ type LeetCodeProblem struct {
 }
 
 type EmailListResponse struct {
-	EmailList []string `json:"email_list"`
+	EmailList []string
+}
+
+type Email struct {
+	Emails []string
+}
+
+type Problem struct {
+	Problems []map[string]string
 }
 
 func create_supabase_client() *supabase.Client {
@@ -48,7 +56,7 @@ func add_username_and_email_to_database(leetcode_username string, new_email stri
 	var old_emails []EmailListResponse
 	var updatedEmails []string
 
-	response, _, _ := client.From(table).Select("email_list", "", false).Eq("username", leetcode_username).Execute()
+	response, _, _ := client.From(table).Select("emails", "", false).Eq("username", leetcode_username).Execute()
 	json.Unmarshal(response, &old_emails)
 
 	for _, old_email := range old_emails {
@@ -60,4 +68,26 @@ func add_username_and_email_to_database(leetcode_username string, new_email stri
 		"email_list": updatedEmails,
 	}
 	client.From(table).Update(data, "", "").Eq("username", leetcode_username).Execute()
+}
+
+func get_emails_and_problems(leetcode_username string) ([]string, []map[string]string) {
+	client := create_supabase_client()
+	table := os.Getenv("SUPABASE_TABLE")
+
+	emails_data, _, _ := client.From(table).Select("emails", "", false).Eq("username", leetcode_username).Execute()
+	problems_data, _, _ := client.From(table).Select("problems", "", false).Eq("username", leetcode_username).Execute()
+
+	var emailStruct []Email
+	var problemStruct []Problem
+
+	json.Unmarshal([]byte(string(emails_data)), &emailStruct)
+	json.Unmarshal([]byte(string(problems_data)), &problemStruct)
+
+	emails := emailStruct[0].Emails
+	problems := problemStruct[0].Problems
+
+	fmt.Println(emails)
+	fmt.Println(problems)
+
+	return emails, problems
 }

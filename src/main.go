@@ -54,16 +54,19 @@ func main() {
 	fmt.Print("Enter email: ")
 	fmt.Scanln(&email)
 
-	add_username_and_email_to_database(leetcode_username, email)
+	// add_username_and_email_to_database(leetcode_username, email)
 
 	data, _ := os.ReadFile("graphql/get_recent_submissions.graphql")
-	query := string(data)
-	request := &GraphQL{
-		Query: query,
-		Variables: map[string]interface{}{
-			"username": leetcode_username,
-		},
-	}
+	fmt.Println(string(data))
+	// query := string(data)
+	// request := &GraphQL{
+	// 	Query: query,
+	// 	Variables: map[string]interface{}{
+	// 		"username": leetcode_username,
+	// 	},
+	// }
 
-	query_leetcode_graphql_api(request)
+	// query_leetcode_graphql_api(request)
+	// get_emails_and_problems(leetcode_username)
+	send_email(get_emails_and_problems(leetcode_username))
 }
