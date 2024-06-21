@@ -4,18 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/supabase-community/supabase-go"
 )
 
 type LeetCodeProblem struct {
-	Link           string
-	TitleSlug      string
-	Difficulty     string
-	Tags           []string
-	CompletedDates []time.Time
-	RepeatDate     time.Time
+	Link                string
+	Title               string
+	TitleSlug           string
+	Difficulty          string
+	CompletedTimestamps []int64
+	RepeatTimestamp     int64
 }
 
 type Subscriber struct {
