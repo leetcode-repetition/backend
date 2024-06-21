@@ -8,15 +8,6 @@ import (
 	"github.com/supabase-community/supabase-go"
 )
 
-type LeetCodeProblem struct {
-	Link                string
-	Title               string
-	TitleSlug           string
-	Difficulty          string
-	CompletedTimestamps []int64
-	RepeatTimestamp     int64
-}
-
 type Subscriber struct {
 	Email    string            `json:"email"`
 	Username string            `json:"username"`
@@ -43,14 +34,26 @@ func add_new_subscriber_to_database(email string, username string) {
 	client.From(table).Upsert(subscriber, "email", "success", "").Execute()
 }
 
+func get_all_subscribers_with_recent_activity() []Subscriber {
+	client := create_supabase_client()
+	table := os.Getenv("SUPABASE_TABLE")
+
+	raw_data, _, _ := client.From(table).Select("*", "", false).Execute()
+	var subscribers []Subscriber
+
+	json.Unmarshal([]byte(string(raw_data)), &subscribers)
+
+	return subscribers
+}
+
 func get_subscriber(email string) Subscriber {
 	client := create_supabase_client()
 	table := os.Getenv("SUPABASE_TABLE")
 
 	raw_data, _, _ := client.From(table).Select("*", "", false).Eq("email", email).Execute()
-	var infoStruct []Subscriber
+	var subscriber []Subscriber
 
-	json.Unmarshal([]byte(string(raw_data)), &infoStruct)
+	json.Unmarshal([]byte(string(raw_data)), &subscriber)
 
-	return infoStruct[0]
+	return subscriber[0]
 }

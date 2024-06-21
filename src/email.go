@@ -52,7 +52,7 @@ func get_daily_email_message(username string, problems []LeetCodeProblem) *mail.
 	return email_message
 }
 
-func send_daily_email(subscriber Subscriber) {
+func send_spaced_repetition_email(subscriber Subscriber) {
 	client := create_email_client()
 
 	email_message := get_daily_email_message(subscriber.Username, subscriber.Problems)

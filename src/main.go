@@ -8,7 +8,18 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
 )
+
+type LeetCodeProblem struct {
+	Link                string
+	Title               string
+	TitleSlug           string
+	Difficulty          string
+	CompletedTimestamps []int64
+	RepeatTimestamp     int64
+}
 
 const DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -31,7 +42,7 @@ func query_leetcode_api(url string) (map[string]interface{}, error) {
 	return formatted_response, nil
 }
 
-func get_completed_dates(title_slug string) []int64 {
+func get_completed_timestamps(title_slug string) []int64 {
 	subscriber := get_subscriber("jacobhmurrah@gmail.com")
 	problems := subscriber.Problems
 
@@ -44,8 +55,7 @@ func get_completed_dates(title_slug string) []int64 {
 	return []int64{}
 }
 
-func get_offset(difficulty string, title_slug string) int64 {
-	completed_dates := get_completed_dates(title_slug)
+func get_offset(difficulty string, completed_dates []int64) int64 {
 	length_completed := len(completed_dates)
 
 	maxCompleted := map[string]map[string]int64{
@@ -61,34 +71,33 @@ func get_offset(difficulty string, title_slug string) int64 {
 	return int64(math.Pow(2, float64(length_completed))) * maxCompleted["difficulty"]["days"] * DAY_IN_SECONDS
 }
 
-func create_leetcode_problem_object(title_slug string) LeetCodeProblem {
-	completed_dates := get_completed_dates(title_slug)
+func create_leetcode_problem_object(title_slug string, latest_completion_timestamp int64) LeetCodeProblem {
+	problem_data, _ := query_leetcode_api("http://localhost:3000/select?titleSlug=" + title_slug)
 
-	// get previos completed
-	data, _ := query_leetcode_api("http://localhost:3000/select?titleSlug=" + title_slug)
+	difficulty, _ := problem_data["difficulty"].(string)
 
-	difficulty, _ := data["difficulty"].(string)
-	repeat_on := time.Now().Unix() + get_offset(difficulty, title_slug)
+	completed_timestamps := get_completed_timestamps(title_slug)
+	completed_timestamps = append(completed_timestamps, latest_completion_timestamp)
 
 	return LeetCodeProblem{
-		Link:                data["link"].(string),
-		Title:               data["questionTitle"].(string),
+		Link:                problem_data["link"].(string),
+		Title:               problem_data["questionTitle"].(string),
 		TitleSlug:           title_slug,
-		Difficulty:          data["difficulty"].(string),
-		CompletedTimestamps: completed_dates,
-		RepeatTimestamp:     repeat_on,
+		Difficulty:          difficulty,
+		CompletedTimestamps: completed_timestamps,
+		RepeatTimestamp:     latest_completion_timestamp + get_offset(difficulty, completed_timestamps),
 	}
 }
 
-func format_problems(unformatted_problems []interface{}) []LeetCodeProblem {
+func transform_into_leetcode_problems(subscriber Subscriber, unformatted_problems []interface{}) []LeetCodeProblem {
 	var formatted_problems []LeetCodeProblem
 
 	for _, item := range unformatted_problems {
 		unformatted_problem, _ := item.(map[string]interface{})
-		timestamp, _ := strconv.ParseInt(unformatted_problem["timestamp"].(string), 10, 64)
+		latest_completed_timestamp, _ := strconv.ParseInt(unformatted_problem["timestamp"].(string), 10, 64)
 
-		if timestamp > (time.Now().Unix() - DAY_IN_SECONDS) {
-			problem := create_leetcode_problem_object(unformatted_problem["titleSlug"].(string))
+		if latest_completed_timestamp > (time.Now().Unix() - DAY_IN_SECONDS) {
+			problem := create_leetcode_problem_object(unformatted_problem["titleSlug"].(string), latest_completed_timestamp)
 			formatted_problems = append(formatted_problems, problem)
 		}
 	}
@@ -125,8 +134,13 @@ func handle_new_subscriptions() {
 
 // func get_problems_accepted_yesterday() int {
 func main() {
-	// https://alfa-leetcode-api.onrender.com/username/acsubmission
-	data, _ := query_leetcode_api("http://localhost:3000/jmurrah/acsubmission")
-	unformatted_problems, _ := data["submission"].([]interface{})
-	format_problems(unformatted_problems)
+	godotenv.Load("../.env")
+
+	//alfa-leetcode-api.onrender.com/username/acsubmission
+	for _, subscriber := range get_all_subscribers() {
+		submission_data, _ := query_leetcode_api("http://localhost:3000/" + subscriber.Username + "/acsubmission")
+		unformatted_problems, _ := submission_data["submission"].([]interface{})
+		problems := transform_into_leetcode_problems(subscriber, unformatted_problems)
+		send_spaced_repetition_email()
+	}
 }
