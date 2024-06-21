@@ -36,7 +36,7 @@ func get_welcome_email_message(username string) *mail.Msg {
 	return email_message
 }
 
-func get_daily_email_message(username string, problems []map[string]string) *mail.Msg {
+func get_daily_email_message(username string, problems []LeetCodeProblem) *mail.Msg {
 	//call database to get the problems for a specific user
 	email_message := mail.NewMsg()
 	email_message.SetBulk()
@@ -45,20 +45,19 @@ func get_daily_email_message(username string, problems []map[string]string) *mai
 
 	mystr := "Hello " + username + ", here are the problems you should complete today:\n"
 	for _, problem := range problems {
-		mystr += (problem["test"] + "\n")
-		// get the actual problem list with hyperlinks to the leetcode problem
+		mystr += (problem.Link + "\n")
 	}
 
 	email_message.SetBodyString(mail.TypeTextPlain, mystr)
 	return email_message
 }
 
-func send_daily_email(row Row) {
+func send_daily_email(subscriber Subscriber) {
 	client := create_email_client()
 
-	email_message := get_daily_email_message(row.Username, row.Problems)
+	email_message := get_daily_email_message(subscriber.Username, subscriber.Problems)
 
-	if err := email_message.To(string(row.Email)); err != nil {
+	if err := email_message.To(string(subscriber.Email)); err != nil {
 		fmt.Printf("failed to set To address: %s", err)
 		// delete this email from list (aka not a valid email)
 	}

@@ -10,6 +10,7 @@ import (
 )
 
 type LeetCodeProblem struct {
+	Link           string
 	TitleSlug      string
 	Difficulty     string
 	Tags           []string
@@ -17,10 +18,10 @@ type LeetCodeProblem struct {
 	RepeatDate     time.Time
 }
 
-type Row struct {
-	Email    string              `json:"email"`
-	Username string              `json:"username"`
-	Problems []map[string]string `json:"problems"`
+type Subscriber struct {
+	Email    string            `json:"email"`
+	Username string            `json:"username"`
+	Problems []LeetCodeProblem `json:"problems"`
 }
 
 func create_supabase_client() *supabase.Client {
@@ -31,31 +32,24 @@ func create_supabase_client() *supabase.Client {
 	return client
 }
 
-func add_row_to_database(email string, username string) {
-	row := Row{
+func add_new_subscriber_to_database(email string, username string) {
+	subscriber := Subscriber{
 		Email:    email,
 		Username: username,
-		Problems: []map[string]string{
-			{
-				"test": "solution1",
-			},
-			{
-				"test": "solution2",
-			},
-		},
+		Problems: []LeetCodeProblem{},
 	}
 
 	client := create_supabase_client()
 	table := os.Getenv("SUPABASE_TABLE")
-	client.From(table).Upsert(row, "email", "success", "").Execute()
+	client.From(table).Upsert(subscriber, "email", "success", "").Execute()
 }
 
-func get_row(email string) Row {
+func get_subscriber(email string) Subscriber {
 	client := create_supabase_client()
 	table := os.Getenv("SUPABASE_TABLE")
 
 	raw_data, _, _ := client.From(table).Select("*", "", false).Eq("email", email).Execute()
-	var infoStruct []Row
+	var infoStruct []Subscriber
 
 	json.Unmarshal([]byte(string(raw_data)), &infoStruct)
 

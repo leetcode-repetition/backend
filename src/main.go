@@ -1,33 +1,47 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 
 	"github.com/joho/godotenv"
 )
 
-type GraphQL struct {
-	Query     string
-	Variables map[string]interface{}
-}
-
-func query_leetcode_graphql_api(request *GraphQL) ([]byte, error) {
-	body, _ := json.Marshal(request)
-	response, err := http.Post("https://leetcode.com/graphql", "application/json", bytes.NewBuffer(body))
-
+func query_leetcode_api(url string) (map[string]interface{}, error) {
+	response, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request to API endpoint. %v", err)
 	}
+
 	defer response.Body.Close()
 
-	response_body, _ := io.ReadAll(response.Body)
-	fmt.Println(string(response_body))
-	return response_body, nil
+	response_body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading data. %v", err)
+	}
+
+	var formatted_response map[string]interface{}
+	json.Unmarshal(response_body, &formatted_response)
+
+	return formatted_response, nil
+}
+
+func format_problems(unformatted_problems []interface{}) {
+	// var formatted_problems []LeetCodeProblem
+
+	for _, item := range unformatted_problems {
+		// Assert item to be of type map[string]interface{}
+		unf_problem, ok := item.(map[string]interface{})
+		if !ok {
+			fmt.Println("Item is not of type map[string]interface{}")
+			continue
+		}
+
+		// Now you can safely index unf_problem
+		fmt.Println(unf_problem["lang"])
+	}
 }
 
 // func schedule(f func(), firstRun time.Duration) {
@@ -55,20 +69,11 @@ func main() {
 	fmt.Print("Enter email: ")
 	fmt.Scanln(&email)
 
-	// check if the username exists and check if email exists.
-
-	query, _ := os.ReadFile("graphql/get_recent_submissions.graphql")
-	payload := &GraphQL{
-		Query: string(query),
-		Variables: map[string]interface{}{
-			"username": username,
-		},
-	}
-
-	query_leetcode_graphql_api(payload)
-	// fmt.Println(request)
-
-	// add_row_to_database(email, username)
+	// https://alfa-leetcode-api.onrender.com/
+	data, _ := query_leetcode_api("http://localhost:3000/jmurrah/acsubmission")
+	unformatted_problems, _ := data["submission"].([]interface{})
+	format_problems(unformatted_problems)
+	add_new_subscriber_to_database(email, username)
 	// send_welcome_email(username)
 
 	// send_daily_email(get_row(email))
