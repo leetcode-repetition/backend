@@ -18,26 +18,45 @@ func create_email_client() *mail.Client {
 	return client
 }
 
-func get_email_message(username string, problems []map[string]string) *mail.Msg {
+func get_welcome_email_message(username string) *mail.Msg {
+	email_message := mail.NewMsg()
+	email_message.SetBulk()
+	email_message.FromFormat("LeetCode Spaced Repetition", os.Getenv("EMAIL_ADDRESS"))
+	email_message.Subject("Thank you for subscribing to LeetCode Spaced Repetition!")
+	email_message.SetBodyString(mail.TypeTextPlain, `Hello `+username+`, 
+	the developer (hyperlink to my socials) appreciates you for subscribing to LeetCode Spaced Repetition.
+	When it is time to review one or more LeetCode questions you will automatically be sent an email
+	reminding you of which problems should be completed on that particular day.
+	
+	So what is spaced repetition anyways?
+	Spaced repetition is an evidence-based learning technique that is usually performed with flashcards, but in
+	this case LeetCode problems. Newly introduced and more difficult flashcards are shown more frequently, while 
+	older and less difficult flashcards are shown less frequently in order to exploit the psychological spacing effect. 
+	The use of spaced repetition has been proven to increase the rate of learning.`)
+	return email_message
+}
+
+func get_daily_email_message(username string, problems []map[string]string) *mail.Msg {
 	//call database to get the problems for a specific user
 	email_message := mail.NewMsg()
-	email_message.FromFormat("LeetCode Spaced Repitition", os.Getenv("EMAIL_ADDRESS"))
+	email_message.SetBulk()
+	email_message.FromFormat("LeetCode Spaced Repetition", os.Getenv("EMAIL_ADDRESS"))
 	email_message.Subject("Testing Bulk Email!")
 
 	mystr := "Hello " + username + ", here are the problems you should complete today:\n"
 	for _, problem := range problems {
 		mystr += (problem["test"] + "\n")
+		// get the actual problem list with hyperlinks to the leetcode problem
 	}
 
 	email_message.SetBodyString(mail.TypeTextPlain, mystr)
-	email_message.SetBulk()
 	return email_message
 }
 
-func send_email(row Row) {
+func send_daily_email(row Row) {
 	client := create_email_client()
 
-	email_message := get_email_message(row.Username, row.Problems)
+	email_message := get_daily_email_message(row.Username, row.Problems)
 
 	if err := email_message.To(string(row.Email)); err != nil {
 		fmt.Printf("failed to set To address: %s", err)
@@ -49,5 +68,16 @@ func send_email(row Row) {
 		return
 	}
 
+	fmt.Println("success")
+}
+
+func send_welcome_email(username string) {
+	client := create_email_client()
+	email_message := get_welcome_email_message(username)
+
+	if err := client.DialAndSend(email_message); err != nil {
+		fmt.Printf("failed to send mail: %s", err)
+		return
+	}
 	fmt.Println("success")
 }

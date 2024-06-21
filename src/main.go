@@ -26,6 +26,7 @@ func query_leetcode_graphql_api(request *GraphQL) ([]byte, error) {
 	defer response.Body.Close()
 
 	response_body, _ := io.ReadAll(response.Body)
+	fmt.Println(string(response_body))
 	return response_body, nil
 }
 
@@ -41,6 +42,7 @@ func query_leetcode_graphql_api(request *GraphQL) ([]byte, error) {
 // 	}
 // }
 
+// rename this function to convey ADDING NEW EMAIL TO MAILING LIST
 func main() {
 	godotenv.Load("../.env")
 
@@ -53,20 +55,21 @@ func main() {
 	fmt.Print("Enter email: ")
 	fmt.Scanln(&email)
 
-	// check if the username exists.
+	// check if the username exists and check if email exists.
 
-	add_row_to_database(email, username)
+	query, _ := os.ReadFile("graphql/get_recent_submissions.graphql")
+	payload := &GraphQL{
+		Query: string(query),
+		Variables: map[string]interface{}{
+			"username": username,
+		},
+	}
 
-	data, _ := os.ReadFile("graphql/get_recent_submissions.graphql")
-	fmt.Println(string(data))
-	// query := string(data)
-	// request := &GraphQL{
-	// 	Query: query,
-	// 	Variables: map[string]interface{}{
-	// 		"username": leetcode_username,
-	// 	},
-	// }
+	query_leetcode_graphql_api(payload)
+	// fmt.Println(request)
 
-	// query_leetcode_graphql_api(request)
-	// send_email(get_row(email))
+	// add_row_to_database(email, username)
+	// send_welcome_email(username)
+
+	// send_daily_email(get_row(email))
 }
