@@ -1,4 +1,4 @@
-module leetcode-spaced-repitition
+module leetcode-spaced-repetition
 
 go 1.22.4
 
@@ -11,4 +11,5 @@ require (
 	github.com/supabase-community/storage-go v0.7.0 // indirect
 	github.com/supabase-community/supabase-go v0.0.4 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80 // indirect
+	github.com/wneessen/go-mail v0.4.1 // indirect
 )
