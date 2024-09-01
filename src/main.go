@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type LeetCodeProblem struct {
@@ -133,14 +132,57 @@ func handle_new_subscriptions() {
 }
 
 // func get_problems_accepted_yesterday() int {
-func main() {
-	godotenv.Load("../.env")
+// func main() {
+// 	godotenv.Load("../.env")
 
-	//alfa-leetcode-api.onrender.com/username/acsubmission
-	for _, subscriber := range get_all_subscribers() {
-		submission_data, _ := query_leetcode_api("http://localhost:3000/" + subscriber.Username + "/acsubmission")
-		unformatted_problems, _ := submission_data["submission"].([]interface{})
-		problems := transform_into_leetcode_problems(subscriber, unformatted_problems)
-		send_spaced_repetition_email()
+// 	//alfa-leetcode-api.onrender.com/username/acsubmission
+// 	for _, subscriber := range get_all_subscribers() {
+// 		submission_data, _ := query_leetcode_api("http://localhost:3000/" + subscriber.Username + "/acsubmission")
+// 		unformatted_problems, _ := submission_data["submission"].([]interface{})
+// 		problems := transform_into_leetcode_problems(subscriber, unformatted_problems)
+// 		send_spaced_repetition_email()
+// 	}
+// }
+
+func enableCORS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	}
 }
+
+func main() {
+	fmt.Println("program running!")
+	http.HandleFunc("/hello", enableCORS(helloHandler))
+
+	fmt.Println("Server is running on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Hello, World!")
+
+	response := map[string]string{"message": "Hello, World!"}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// func getSubscribersHandler(w http.ResponseWriter, r *http.Request) {
+// 	if r.Method != http.MethodGet {
+// 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+// 		return
+// 	}
+
+// 	subscribers := get_all_subscribers_with_recent_activity()
+
+// 	w.Header().Set("Content-Type", "application/json")
+// 	json.NewEncoder(w).Encode(subscribers)
+// }
