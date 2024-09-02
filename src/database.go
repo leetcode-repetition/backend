@@ -8,8 +8,7 @@ import (
 	"github.com/supabase-community/supabase-go"
 )
 
-type Subscriber struct {
-	Email    string            `json:"email"`
+type User struct {
 	Username string            `json:"username"`
 	Problems []LeetCodeProblem `json:"problems"`
 }
@@ -22,38 +21,29 @@ func create_supabase_client() *supabase.Client {
 	return client
 }
 
-func add_new_subscriber_to_database(email string, username string) {
-	subscriber := Subscriber{
-		Email:    email,
+func upsert_database(username string, problems []LeetCodeProblem) {
+	user := User{
 		Username: username,
-		Problems: []LeetCodeProblem{},
+		Problems: problems,
 	}
-
 	client := create_supabase_client()
 	table := os.Getenv("SUPABASE_TABLE")
-	client.From(table).Upsert(subscriber, "email", "success", "").Execute()
+	client.From(table).Upsert(user, "username", "success", "").Execute()
 }
 
-func get_all_subscribers_with_recent_activity() []Subscriber {
+func get_problems_from_database(username string) []LeetCodeProblem {
+	var problems []LeetCodeProblem
+	var raw_response []map[string]json.RawMessage
+
 	client := create_supabase_client()
 	table := os.Getenv("SUPABASE_TABLE")
 
-	raw_data, _, _ := client.From(table).Select("*", "", false).Execute()
-	var subscribers []Subscriber
+	raw_data, _, _ := client.From(table).Select("problems", "", false).Eq("username", username).Execute()
+	json.Unmarshal(raw_data, &raw_response)
 
-	json.Unmarshal([]byte(string(raw_data)), &subscribers)
-
-	return subscribers
-}
-
-func get_subscriber(email string) Subscriber {
-	client := create_supabase_client()
-	table := os.Getenv("SUPABASE_TABLE")
-
-	raw_data, _, _ := client.From(table).Select("*", "", false).Eq("email", email).Execute()
-	var subscriber []Subscriber
-
-	json.Unmarshal([]byte(string(raw_data)), &subscriber)
-
-	return subscriber[0]
+	if len(raw_response) == 0 {
+		upsert_database(username, []LeetCodeProblem{})
+	}
+	json.Unmarshal(raw_response[0]["problems"], &problems)
+	return problems
 }
