@@ -38,7 +38,7 @@ type LeetCodeProblem struct {
 // }
 
 // func get_completed_timestamps(title_slug string) []int64 {
-// 	subscriber := get_subscriber("jacobhmurrah@gmail.com")
+// 	subscriber := get_subscriber("")
 // 	problems := subscriber.Problems
 
 // 	for _, problem := range problems {
@@ -114,24 +114,28 @@ func enableCORS(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func genericHandler(specificHandler func(map[string]interface{}) map[string]interface{}) http.HandlerFunc {
+func genericHandler(specificHandler func(*http.Request, map[string]interface{}) map[string]interface{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var requestData map[string]interface{}
 		json.NewDecoder(r.Body).Decode(&requestData)
 		fmt.Println("Received data:", requestData)
 
-		responseData := specificHandler(requestData)
+		responseData := specificHandler(r, requestData)
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(responseData)
 	}
 }
 
-func getTableHandler(incoming_data map[string]interface{}) map[string]interface{} {
-	fmt.Println("Processing get-table data:", incoming_data)
-	var problems = []map[string]interface{}{}
+func getTableHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		return map[string]interface{}{"error": "Username not provided"}
+	}
+	fmt.Println("Processing get-table data for user:", username)
 
-	for _, problem := range get_problems_from_database(incoming_data["username"].(string)) {
+	var problems = []map[string]interface{}{}
+	for _, problem := range get_problems_from_database(username) {
 		problems = append(problems, map[string]interface{}{
 			"link":                problem.Link,
 			"title":               problem.Title,
@@ -148,7 +152,7 @@ func getTableHandler(incoming_data map[string]interface{}) map[string]interface{
 	}
 }
 
-func deleteRowHandler(data map[string]interface{}) map[string]interface{} {
+func deleteRowHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
 	fmt.Println("Processing delete-row data:", data)
 	return map[string]interface{}{
 		"message": "Delete row data processed",

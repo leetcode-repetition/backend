@@ -16,8 +16,9 @@ type User struct {
 func create_supabase_client() *supabase.Client {
 	client, err := supabase.NewClient(os.Getenv("SUPABASE_URL"), os.Getenv("SUPABASE_KEY"), &supabase.ClientOptions{})
 	if err != nil {
-		fmt.Println("cannot initalize client", err)
+		fmt.Println("Cannot initalize client", err)
 	}
+	fmt.Println("Initailized supabase client")
 	return client
 }
 
@@ -28,7 +29,12 @@ func upsert_database(username string, problems []LeetCodeProblem) {
 	}
 	client := create_supabase_client()
 	table := os.Getenv("SUPABASE_TABLE")
-	client.From(table).Upsert(user, "username", "success", "").Execute()
+
+	_, _, err := client.From(table).Upsert(user, "username", "success", "").Execute()
+	if err != nil {
+		fmt.Println("Error upserting database:", err)
+	}
+	fmt.Println("Successfully upserted database entry for user:", username)
 }
 
 func get_problems_from_database(username string) []LeetCodeProblem {
@@ -38,11 +44,14 @@ func get_problems_from_database(username string) []LeetCodeProblem {
 	client := create_supabase_client()
 	table := os.Getenv("SUPABASE_TABLE")
 
+	fmt.Println("Getting problems from database for user:", username)
 	raw_data, _, _ := client.From(table).Select("problems", "", false).Eq("username", username).Execute()
 	json.Unmarshal(raw_data, &raw_response)
 
 	if len(raw_response) == 0 {
+		fmt.Println("User not found. Adding user to database:", username)
 		upsert_database(username, []LeetCodeProblem{})
+		return []LeetCodeProblem{}
 	}
 	json.Unmarshal(raw_response[0]["problems"], &problems)
 	return problems
