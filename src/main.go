@@ -148,7 +148,8 @@ func getTableHandler(r *http.Request, data map[string]interface{}) map[string]in
 
 	return map[string]interface{}{
 		"message": "Get table data processed",
-		"data":    problems,
+		"table":   problems,
+		"isEmpty": len(problems) == 0,
 	}
 }
 
@@ -160,12 +161,21 @@ func deleteRowHandler(r *http.Request, data map[string]interface{}) map[string]i
 	}
 }
 
+func insertRowHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
+	fmt.Println("Processing insert-row data:", data)
+	return map[string]interface{}{
+		"message": "Insert row data processed",
+		"data":    data,
+	}
+}
+
 func main() {
 	godotenv.Load("../.env")
 	fmt.Println("program running!")
 
 	http.HandleFunc("/get-table", enableCORS(genericHandler(getTableHandler)))
 	http.HandleFunc("/delete-row", enableCORS(genericHandler(deleteRowHandler)))
+	http.HandleFunc("/insert-row", enableCORS(genericHandler(insertRowHandler)))
 
 	fmt.Println("Server is running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
