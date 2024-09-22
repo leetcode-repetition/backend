@@ -10,11 +10,11 @@ import (
 )
 
 type LeetCodeProblem struct {
-	link           string
-	titleSlug      string
-	difficulty     string
-	repeatDate     string
-	completedDates []string
+	link               string
+	titleSlug          string
+	difficulty         string
+	repeatDate         string
+	lastCompletionDate string
 }
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {
