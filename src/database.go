@@ -23,23 +23,62 @@ func create_supabase_client() (*supabase.Client, error) {
 	return client, err
 }
 
-func upsert_database(username string, problems []LeetCodeProblem) {
+// func upsert_database(username string, problems []LeetCodeProblem) {
+// 	user := User{
+// 		Username: username,
+// 		Problems: problems,
+// 	}
+// 	client, e := create_supabase_client()
+// 	if e != nil {
+// 		fmt.Println("Error creating supabase client:", e)
+// 		return
+// 	}
+// 	table := os.Getenv("SUPABASE_TABLE")
+
+//		_, _, err := client.From(table).Insert(user, true, "username", "success", "").Execute()
+//		if err != nil {
+//			fmt.Println("Error upserting database:", err)
+//		}
+//		fmt.Println("Successfully upserted database entry for user:", username)
+//	}
+
+func initialize_user(username string) {
 	user := User{
 		Username: username,
-		Problems: problems,
+		Problems: []LeetCodeProblem{},
 	}
+
 	client, e := create_supabase_client()
 	if e != nil {
 		fmt.Println("Error creating supabase client:", e)
 		return
 	}
+
 	table := os.Getenv("SUPABASE_TABLE")
 
-	_, _, err := client.From(table).Upsert(user, "username", "success", "").Execute()
+	_, _, err := client.From(table).Insert(user, true, "username", "success", "").Execute()
 	if err != nil {
-		fmt.Println("Error upserting database:", err)
+		fmt.Println("Error initializing user in database:", err)
+		return
 	}
-	fmt.Println("Successfully upserted database entry for user:", username)
+
+	fmt.Println("Successfully initialized database entry for user:", username)
+}
+
+func add_problem_to_database(username string, problem LeetCodeProblem) error {
+	client, err := create_supabase_client()
+	if err != nil {
+		return err
+	}
+
+	table := os.Getenv("SUPABASE_TABLE")
+
+	_, _, err = client.From(table).
+		Update(map[string]interface{}{"problems": problem}, "", "").
+		Eq("username", username).
+		Execute()
+
+	return err
 }
 
 func get_problems_from_database(username string) []LeetCodeProblem {
@@ -59,7 +98,7 @@ func get_problems_from_database(username string) []LeetCodeProblem {
 
 	if len(raw_response) == 0 {
 		fmt.Println("User not found. Adding user to database:", username)
-		upsert_database(username, []LeetCodeProblem{})
+		initialize_user(username)
 		return []LeetCodeProblem{}
 	}
 	json.Unmarshal(raw_response[0]["problems"], &problems)
