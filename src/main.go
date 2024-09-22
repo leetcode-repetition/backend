@@ -55,12 +55,11 @@ func getTableHandler(r *http.Request, data map[string]interface{}) map[string]in
 	var problems = []map[string]interface{}{}
 	for _, problem := range get_problems_from_database(username) {
 		problems = append(problems, map[string]interface{}{
-			"link":                problem.link,
-			"titleSlug":           problem.titleSlug,
-			"difficulty":          problem.difficulty,
-			"repeatDate":          problem.repeatDate,
-			"latestCompletedDate": problem.completedDates[len(problem.completedDates)-1],
-			"completedCount":      len(problem.completedDates),
+			"link":               problem.link,
+			"titleSlug":          problem.titleSlug,
+			"difficulty":         problem.difficulty,
+			"repeatDate":         problem.repeatDate,
+			"lastCompletionDate": problem.lastCompletionDate,
 		})
 	}
 	fmt.Println("Problems for user", username, ":", problems)
