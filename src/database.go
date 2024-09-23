@@ -18,25 +18,6 @@ func create_supabase_client() (*supabase.Client, error) {
 	return client, err
 }
 
-// func upsert_database(username string, problems []LeetCodeProblem) {
-// 	user := User{
-// 		Username: username,
-// 		Problems: problems,
-// 	}
-// 	client, e := create_supabase_client()
-// 	if e != nil {
-// 		fmt.Println("Error creating supabase client:", e)
-// 		return
-// 	}
-// 	table := os.Getenv("SUPABASE_TABLE")
-
-//		_, _, err := client.From(table).Insert(user, true, "username", "success", "").Execute()
-//		if err != nil {
-//			fmt.Println("Error upserting database:", err)
-//		}
-//		fmt.Println("Successfully upserted database entry for user:", username)
-//	}
-
 func upsert_problem_into_database(username string, problem LeetCodeProblem) error {
 	client, err := create_supabase_client()
 	if err != nil {
@@ -44,7 +25,6 @@ func upsert_problem_into_database(username string, problem LeetCodeProblem) erro
 	}
 
 	table := os.Getenv("SUPABASE_TABLE")
-
 	_, _, err = client.From(table).
 		Upsert(map[string]interface{}{
 			"username":           username,
@@ -56,12 +36,35 @@ func upsert_problem_into_database(username string, problem LeetCodeProblem) erro
 		}, "username,titleSlug", "", "").
 		Execute()
 
+	if err != nil {
+		fmt.Println("Error upserting database:", err)
+	}
+	fmt.Println("Successfully upserted database entry for user:", username)
+	return err
+}
+
+func delete_problem_from_database(username string, problem_title_slug string) error {
+	client, err := create_supabase_client()
+	if err != nil {
+		return err
+	}
+
+	table := os.Getenv("SUPABASE_TABLE")
+	_, _, err = client.From(table).
+		Delete("", "").
+		Eq("username", username).
+		Eq("titleSlug", problem_title_slug).
+		Execute()
+
+	if err != nil {
+		fmt.Println("Error deleting database entry:", err)
+	}
+	fmt.Println("Successfully deleted database entry for user:", username)
 	return err
 }
 
 func get_problems_from_database(username string) []LeetCodeProblem {
 	var problems []LeetCodeProblem
-	var raw_response []map[string]json.RawMessage
 
 	client, e := create_supabase_client()
 	if e != nil {
@@ -71,15 +74,32 @@ func get_problems_from_database(username string) []LeetCodeProblem {
 	table := os.Getenv("SUPABASE_TABLE")
 
 	fmt.Println("Getting problems from database for user:", username)
-	raw_data, _, _ := client.From(table).Select("*", "", false).Eq("username", username).Execute()
-	json.Unmarshal(raw_data, &raw_response)
-
-	fmt.Println("Raw response:", raw_response)
-
-	if len(raw_response) == 0 {
-		fmt.Println("User not found. Adding user to database:", username)
+	raw_data, _, err := client.From(table).Select("*", "", false).Eq("username", username).Execute()
+	if err != nil {
+		fmt.Println("Error fetching data:", err)
 		return []LeetCodeProblem{}
 	}
-	json.Unmarshal(raw_response[0]["problems"], &problems)
+
+	fmt.Println("Raw data:", string(raw_data))
+
+	var rawProblems []map[string]interface{}
+	err = json.Unmarshal(raw_data, &rawProblems)
+	if err != nil {
+		fmt.Println("Error unmarshaling data:", err)
+		return []LeetCodeProblem{}
+	}
+
+	for _, rawProblem := range rawProblems {
+		problem := LeetCodeProblem{
+			link:               rawProblem["link"].(string),
+			titleSlug:          rawProblem["titleSlug"].(string),
+			difficulty:         rawProblem["difficulty"].(string),
+			repeatDate:         rawProblem["repeatDate"].(string),
+			lastCompletionDate: rawProblem["lastCompletionDate"].(string),
+		}
+		problems = append(problems, problem)
+	}
+
+	fmt.Printf("Problems for user %s: %+v\n", username, problems)
 	return problems
 }

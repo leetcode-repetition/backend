@@ -53,6 +53,7 @@ func getTableHandler(r *http.Request, data map[string]interface{}) map[string]in
 	fmt.Println("Processing get-table data for user:", username)
 
 	var problems = []map[string]interface{}{}
+
 	for _, problem := range get_problems_from_database(username) {
 		problems = append(problems, map[string]interface{}{
 			"link":               problem.link,
@@ -70,9 +71,17 @@ func getTableHandler(r *http.Request, data map[string]interface{}) map[string]in
 }
 
 func deleteRowHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
-	// username := r.URL.Query().Get("username")
-	// problem_title_slug := r.URL.Query().Get("problemTitleSlug")
 	fmt.Println("Processing delete-row data:", data)
+
+	username := r.URL.Query().Get("username")
+	problem_title_slug := r.URL.Query().Get("problemTitleSlug")
+	if username == "" || problem_title_slug == "" {
+		fmt.Println("Username or problem title slug not provided")
+		return map[string]interface{}{"error": "Username or problem title slug not provided"}
+	}
+
+	delete_problem_from_database(username, problem_title_slug)
+
 	return map[string]interface{}{
 		"message": "Delete row data processed",
 		"data":    data,
@@ -80,16 +89,28 @@ func deleteRowHandler(r *http.Request, data map[string]interface{}) map[string]i
 }
 
 func insertRowHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
-	fmt.Println("Processing insert-row data:", data)
-	// username := r.URL.Query().Get("username")
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		return map[string]interface{}{"error": "Username not provided"}
+	}
+
+	problem := LeetCodeProblem{
+		link:               data["link"].(string),
+		titleSlug:          data["titleSlug"].(string),
+		difficulty:         data["difficulty"].(string),
+		repeatDate:         data["repeatDate"].(string),
+		lastCompletionDate: data["lastCompletionDate"].(string),
+	}
+	upsert_problem_into_database(username, problem)
+
 	return map[string]interface{}{
-		"message": "Insert row data processed",
+		"message": "Inserted row data processed",
 		"data":    data,
 	}
 }
 
 func main() {
-	godotenv.Load("../.env")
+	godotenv.Load()
 	fmt.Println("program running!")
 
 	http.HandleFunc("/get-table", enableCORS(genericHandler(getTableHandler)))
