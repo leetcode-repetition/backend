@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
+	"time"
 
 	"github.com/supabase-community/supabase-go"
 )
@@ -28,11 +30,11 @@ func upsert_problem_into_database(username string, problem LeetCodeProblem) erro
 	_, _, err = client.From(table).
 		Upsert(map[string]interface{}{
 			"username":           username,
-			"titleSlug":          problem.titleSlug,
-			"link":               problem.link,
-			"difficulty":         problem.difficulty,
-			"repeatDate":         problem.repeatDate,
-			"lastCompletionDate": problem.lastCompletionDate,
+			"titleSlug":          problem.TitleSlug,
+			"link":               problem.Link,
+			"difficulty":         problem.Difficulty,
+			"repeatDate":         problem.RepeatDate,
+			"lastCompletionDate": problem.LastCompletionDate,
 		}, "username,titleSlug", "", "").
 		Execute()
 
@@ -88,17 +90,25 @@ func get_problems_from_database(username string) []LeetCodeProblem {
 		fmt.Println("Error unmarshaling data:", err)
 		return []LeetCodeProblem{}
 	}
-
 	for _, rawProblem := range rawProblems {
 		problem := LeetCodeProblem{
-			link:               rawProblem["link"].(string),
-			titleSlug:          rawProblem["titleSlug"].(string),
-			difficulty:         rawProblem["difficulty"].(string),
-			repeatDate:         rawProblem["repeatDate"].(string),
-			lastCompletionDate: rawProblem["lastCompletionDate"].(string),
+			Link:               rawProblem["link"].(string),
+			TitleSlug:          rawProblem["titleSlug"].(string),
+			Difficulty:         rawProblem["difficulty"].(string),
+			RepeatDate:         rawProblem["repeatDate"].(string),
+			LastCompletionDate: rawProblem["lastCompletionDate"].(string),
 		}
 		problems = append(problems, problem)
 	}
+
+	now := time.Now()
+	sort.Slice(problems, func(i, j int) bool {
+		dateI, _ := time.Parse("1/2/06", problems[i].RepeatDate)
+		dateJ, _ := time.Parse("1/2/06", problems[j].RepeatDate)
+		diffI := dateI.Sub(now).Abs()
+		diffJ := dateJ.Sub(now).Abs()
+		return diffI < diffJ
+	})
 
 	fmt.Printf("Problems for user %s: %+v\n", username, problems)
 	return problems

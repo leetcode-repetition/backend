@@ -10,11 +10,11 @@ import (
 )
 
 type LeetCodeProblem struct {
-	link               string
-	titleSlug          string
-	difficulty         string
-	repeatDate         string
-	lastCompletionDate string
+	Link               string
+	TitleSlug          string
+	Difficulty         string
+	RepeatDate         string
+	LastCompletionDate string
 }
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {
@@ -56,11 +56,11 @@ func getTableHandler(r *http.Request, data map[string]interface{}) map[string]in
 
 	for _, problem := range get_problems_from_database(username) {
 		problems = append(problems, map[string]interface{}{
-			"link":               problem.link,
-			"titleSlug":          problem.titleSlug,
-			"difficulty":         problem.difficulty,
-			"repeatDate":         problem.repeatDate,
-			"lastCompletionDate": problem.lastCompletionDate,
+			"link":               problem.Link,
+			"titleSlug":          problem.TitleSlug,
+			"difficulty":         problem.Difficulty,
+			"repeatDate":         problem.RepeatDate,
+			"lastCompletionDate": problem.LastCompletionDate,
 		})
 	}
 	fmt.Println("Problems for user", username, ":", problems)
@@ -95,11 +95,11 @@ func insertRowHandler(r *http.Request, data map[string]interface{}) map[string]i
 	}
 
 	problem := LeetCodeProblem{
-		link:               data["link"].(string),
-		titleSlug:          data["titleSlug"].(string),
-		difficulty:         data["difficulty"].(string),
-		repeatDate:         data["repeatDate"].(string),
-		lastCompletionDate: data["lastCompletionDate"].(string),
+		Link:               data["link"].(string),
+		TitleSlug:          data["titleSlug"].(string),
+		Difficulty:         data["difficulty"].(string),
+		RepeatDate:         data["repeatDate"].(string),
+		LastCompletionDate: data["lastCompletionDate"].(string),
 	}
 	upsert_problem_into_database(username, problem)
 
