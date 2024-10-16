@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
-	"time"
 
 	"github.com/supabase-community/supabase-go"
 )
@@ -100,15 +98,6 @@ func get_problems_from_database(username string) []LeetCodeProblem {
 		}
 		problems = append(problems, problem)
 	}
-
-	now := time.Now()
-	sort.Slice(problems, func(i, j int) bool {
-		dateI, _ := time.Parse("1/2/06", problems[i].RepeatDate)
-		dateJ, _ := time.Parse("1/2/06", problems[j].RepeatDate)
-		diffI := dateI.Sub(now).Abs()
-		diffJ := dateJ.Sub(now).Abs()
-		return diffI < diffJ
-	})
 
 	fmt.Printf("Problems for user %s: %+v\n", username, problems)
 	return problems
