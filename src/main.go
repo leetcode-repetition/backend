@@ -109,6 +109,23 @@ func insertRowHandler(r *http.Request, data map[string]interface{}) map[string]i
 	}
 }
 
+func generateKeyHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		return map[string]interface{}{"error": "Username not provided"}
+	}
+
+	if !verify_sender(r.Header.Get("Authorization")) {
+		return map[string]interface{}{"error": "Unauthorized"}
+	}
+	// upsert_problem_into_database(username, problem)
+
+	return map[string]interface{}{
+		"message": "Inserted row data processed",
+		"data":    "api key",
+	}
+}
+
 func main() {
 	godotenv.Load()
 	fmt.Println("program running!")
@@ -116,6 +133,7 @@ func main() {
 	http.HandleFunc("/get-table", enableCORS(genericHandler(getTableHandler)))
 	http.HandleFunc("/delete-row", enableCORS(genericHandler(deleteRowHandler)))
 	http.HandleFunc("/insert-row", enableCORS(genericHandler(insertRowHandler)))
+	http.HandleFunc("/generate-key", enableCORS(genericHandler(generateKeyHandler)))
 
 	fmt.Println("Server is running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
