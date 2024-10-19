@@ -9,14 +9,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type LeetCodeProblem struct {
-	Link               string
-	TitleSlug          string
-	Difficulty         string
-	RepeatDate         string
-	LastCompletionDate string
-}
-
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
