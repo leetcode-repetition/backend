@@ -49,12 +49,11 @@ func enableCORS(next http.HandlerFunc) http.HandlerFunc {
 				if solution_attempt == solution.(string) {
 					challenge_solutions.Delete(token)
 					next.ServeHTTP(w, r)
-					fmt.Println("Successfully beat challenge")
+					fmt.Println("Successfully completed challenge")
 					return
 				}
 			}
 			http.Error(w, "Invalid challenge solution: UNAUTHORIZED", http.StatusUnauthorized)
-			fmt.Println("Failed Challenge")
 			return
 		}
 
