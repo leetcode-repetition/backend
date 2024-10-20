@@ -9,35 +9,20 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func enableCORS(next http.HandlerFunc) http.HandlerFunc {
+func generic_handler(specific_handler func(*http.Request, map[string]interface{}) map[string]interface{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		var request_data map[string]interface{}
+		json.NewDecoder(r.Body).Decode(&request_data)
+		fmt.Println("Received data:", request_data)
 
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	}
-}
-
-func genericHandler(specificHandler func(*http.Request, map[string]interface{}) map[string]interface{}) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var requestData map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&requestData)
-		fmt.Println("Received data:", requestData)
-
-		responseData := specificHandler(r, requestData)
+		response_data := specific_handler(r, request_data)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(responseData)
+		json.NewEncoder(w).Encode(response_data)
 	}
 }
 
-func getTableHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
+func get_table_handler(r *http.Request, data map[string]interface{}) map[string]interface{} {
 	username := r.URL.Query().Get("username")
 	if username == "" {
 		return map[string]interface{}{"error": "Username not provided"}
@@ -62,7 +47,7 @@ func getTableHandler(r *http.Request, data map[string]interface{}) map[string]in
 	}
 }
 
-func deleteRowHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
+func delete_row_handler(r *http.Request, data map[string]interface{}) map[string]interface{} {
 	fmt.Println("Processing delete-row data:", data)
 
 	username := r.URL.Query().Get("username")
@@ -80,7 +65,7 @@ func deleteRowHandler(r *http.Request, data map[string]interface{}) map[string]i
 	}
 }
 
-func insertRowHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
+func insert_row_handler(r *http.Request, data map[string]interface{}) map[string]interface{} {
 	username := r.URL.Query().Get("username")
 	if username == "" {
 		return map[string]interface{}{"error": "Username not provided"}
@@ -105,9 +90,9 @@ func main() {
 	godotenv.Load()
 	fmt.Println("program running!")
 
-	http.HandleFunc("/get-table", enableCORS(genericHandler(getTableHandler)))
-	http.HandleFunc("/delete-row", enableCORS(genericHandler(deleteRowHandler)))
-	http.HandleFunc("/insert-row", enableCORS(genericHandler(insertRowHandler)))
+	http.HandleFunc("/get-table", enableCORS(generic_handler(get_table_handler)))
+	http.HandleFunc("/delete-row", enableCORS(generic_handler(delete_row_handler)))
+	http.HandleFunc("/insert-row", enableCORS(generic_handler(insert_row_handler)))
 
 	fmt.Println("Server is running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
