@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -31,9 +30,6 @@ func generate_challenge() (string, string) {
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("-----------------------------")
-		fmt.Println(r)
-
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("EXTENSION_ORIGIN"))
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Challenge-Token, X-Challenge-Response")
@@ -66,11 +62,6 @@ func enableCORS(next http.HandlerFunc) http.HandlerFunc {
 		w.Header().Set("X-Challenge-Token", token)
 		w.Header().Set("X-Challenge", challenge)
 
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
-			"status":  "challenge_required",
-			"message": "Please complete the challenge",
-		})
-		fmt.Println("challenge required")
+		http.Error(w, "Challenge required: UNAUTHORIZED", http.StatusUnauthorized)
 	}
 }
