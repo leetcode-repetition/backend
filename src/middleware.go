@@ -10,12 +10,12 @@ import (
 	"sync"
 )
 
-var challenge_solutions sync.Map
+var challengeSolutions sync.Map
 
-func generate_challenge() (string, string) {
+func generateChallenge() (string, string) {
 	token := make([]byte, 16)
 	rand.Read(token)
-	challenge_token := base64.StdEncoding.EncodeToString(token)
+	challengeToken := base64.StdEncoding.EncodeToString(token)
 
 	a, _ := rand.Int(rand.Reader, big.NewInt(100))
 	b, _ := rand.Int(rand.Reader, big.NewInt(100))
@@ -23,9 +23,9 @@ func generate_challenge() (string, string) {
 
 	challenge := fmt.Sprintf("return (%d * %d * %d);", a, b, c)
 	solution := fmt.Sprintf("%d", a.Int64()*b.Int64()*c.Int64())
-	challenge_solutions.Store(challenge_token, solution)
+	challengeSolutions.Store(challengeToken, solution)
 
-	return challenge_token, challenge
+	return challengeToken, challenge
 }
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {
@@ -42,12 +42,12 @@ func enableCORS(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		token := r.Header.Get("X-Challenge-Token")
-		solution_attempt := r.Header.Get("X-Challenge-Response")
+		solutionAttempt := r.Header.Get("X-Challenge-Response")
 
-		if token != "" && solution_attempt != "" {
-			if solution, ok := challenge_solutions.Load(token); ok {
-				if solution_attempt == solution.(string) {
-					challenge_solutions.Delete(token)
+		if token != "" && solutionAttempt != "" {
+			if solution, ok := challengeSolutions.Load(token); ok {
+				if solutionAttempt == solution.(string) {
+					challengeSolutions.Delete(token)
 					next.ServeHTTP(w, r)
 					fmt.Println("Successfully completed challenge")
 					return
@@ -57,7 +57,7 @@ func enableCORS(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		token, challenge := generate_challenge()
+		token, challenge := generateChallenge()
 		w.Header().Set("X-Challenge-Token", token)
 		w.Header().Set("X-Challenge", challenge)
 

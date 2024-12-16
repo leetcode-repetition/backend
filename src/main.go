@@ -9,20 +9,20 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func generic_handler(specific_handler func(*http.Request, map[string]interface{}) map[string]interface{}) http.HandlerFunc {
+func genericHandler(specificHandler func(*http.Request, map[string]interface{}) map[string]interface{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var request_data map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&request_data)
-		fmt.Println("Received data:", request_data)
+		var requestData map[string]interface{}
+		json.NewDecoder(r.Body).Decode(&requestData)
+		fmt.Println("Received data:", requestData)
 
-		response_data := specific_handler(r, request_data)
+		response_data := specificHandler(r, requestData)
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response_data)
 	}
 }
 
-func get_table_handler(r *http.Request, data map[string]interface{}) map[string]interface{} {
+func getTableHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
 	username := r.URL.Query().Get("username")
 	if username == "" {
 		return map[string]interface{}{"error": "Username not provided"}
@@ -31,7 +31,7 @@ func get_table_handler(r *http.Request, data map[string]interface{}) map[string]
 
 	var problems = []map[string]interface{}{}
 
-	for _, problem := range get_problems_from_database(username) {
+	for _, problem := range getProblemsFromDatabase(username) {
 		problems = append(problems, map[string]interface{}{
 			"link":               problem.Link,
 			"titleSlug":          problem.TitleSlug,
@@ -47,17 +47,17 @@ func get_table_handler(r *http.Request, data map[string]interface{}) map[string]
 	}
 }
 
-func delete_row_handler(r *http.Request, data map[string]interface{}) map[string]interface{} {
+func deleteRowHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
 	fmt.Println("Processing delete-row data:", data)
 
 	username := r.URL.Query().Get("username")
-	problem_title_slug := r.URL.Query().Get("problemTitleSlug")
-	if username == "" || problem_title_slug == "" {
+	problemTitleSlug := r.URL.Query().Get("problemTitleSlug")
+	if username == "" || problemTitleSlug == "" {
 		fmt.Println("Username or problem title slug not provided")
 		return map[string]interface{}{"error": "Username or problem title slug not provided"}
 	}
 
-	delete_problem_from_database(username, problem_title_slug)
+	deleteProblemFromDatabase(username, problemTitleSlug)
 
 	return map[string]interface{}{
 		"message": "Delete row data processed",
@@ -65,7 +65,7 @@ func delete_row_handler(r *http.Request, data map[string]interface{}) map[string
 	}
 }
 
-func insert_row_handler(r *http.Request, data map[string]interface{}) map[string]interface{} {
+func insertRowHandler(r *http.Request, data map[string]interface{}) map[string]interface{} {
 	username := r.URL.Query().Get("username")
 	if username == "" {
 		return map[string]interface{}{"error": "Username not provided"}
@@ -78,7 +78,7 @@ func insert_row_handler(r *http.Request, data map[string]interface{}) map[string
 		RepeatDate:         data["repeatDate"].(string),
 		LastCompletionDate: data["lastCompletionDate"].(string),
 	}
-	upsert_problem_into_database(username, problem)
+	upsertProblemIntoDatabase(username, problem)
 
 	return map[string]interface{}{
 		"message": "Inserted row data processed",
@@ -90,9 +90,9 @@ func main() {
 	godotenv.Load()
 	fmt.Println("program running!")
 
-	http.HandleFunc("/get-table", enableCORS(generic_handler(get_table_handler)))
-	http.HandleFunc("/delete-row", enableCORS(generic_handler(delete_row_handler)))
-	http.HandleFunc("/insert-row", enableCORS(generic_handler(insert_row_handler)))
+	http.HandleFunc("/get-table", enableCORS(genericHandler(getTableHandler)))
+	http.HandleFunc("/delete-row", enableCORS(genericHandler(deleteRowHandler)))
+	http.HandleFunc("/insert-row", enableCORS(genericHandler(insertRowHandler)))
 
 	fmt.Println("Server is running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
