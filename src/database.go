@@ -30,7 +30,6 @@ func upsertProblemIntoDatabase(username string, problem LeetCodeProblem) error {
 			"username":           username,
 			"titleSlug":          problem.TitleSlug,
 			"link":               problem.Link,
-			"difficulty":         problem.Difficulty,
 			"repeatDate":         problem.RepeatDate,
 			"lastCompletionDate": problem.LastCompletionDate,
 		}, "username,titleSlug", "", "").
@@ -92,7 +91,6 @@ func getProblemsFromDatabase(username string) []LeetCodeProblem {
 		problem := LeetCodeProblem{
 			Link:               rawProblem["link"].(string),
 			TitleSlug:          rawProblem["titleSlug"].(string),
-			Difficulty:         rawProblem["difficulty"].(string),
 			RepeatDate:         rawProblem["repeatDate"].(string),
 			LastCompletionDate: rawProblem["lastCompletionDate"].(string),
 		}

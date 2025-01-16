@@ -35,7 +35,6 @@ func getTableHandler(r *http.Request, data map[string]interface{}) map[string]in
 		problems = append(problems, map[string]interface{}{
 			"link":               problem.Link,
 			"titleSlug":          problem.TitleSlug,
-			"difficulty":         problem.Difficulty,
 			"repeatDate":         problem.RepeatDate,
 			"lastCompletionDate": problem.LastCompletionDate,
 		})
@@ -74,7 +73,6 @@ func insertRowHandler(r *http.Request, data map[string]interface{}) map[string]i
 	problem := LeetCodeProblem{
 		Link:               data["link"].(string),
 		TitleSlug:          data["titleSlug"].(string),
-		Difficulty:         data["difficulty"].(string),
 		RepeatDate:         data["repeatDate"].(string),
 		LastCompletionDate: data["lastCompletionDate"].(string),
 	}
