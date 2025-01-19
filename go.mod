@@ -3,6 +3,7 @@ module leetcode-spaced-repetition
 go 1.22.4
 
 require (
+	github.com/aws/aws-lambda-go v1.47.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/supabase-community/functions-go v0.0.0-20220927045802-22373e6cb51d // indirect
