@@ -11,7 +11,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	username := request.QueryStringParameters["username"]
 
 	var problems = []map[string]interface{}{}
-	for _, problem := range getProblemsFromDatabase(username) {
+	for _, problem := range shared.getProblemsFromDatabase(username) {
 		problems = append(problems, map[string]interface{}{
 			"link":               problem.Link,
 			"titleSlug":          problem.TitleSlug,
