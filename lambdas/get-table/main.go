@@ -5,13 +5,15 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
+	shared "github.com/jmurrah/leetcode-repetition-shared"
 )
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	username := request.QueryStringParameters["username"]
 
 	var problems = []map[string]interface{}{}
-	for _, problem := range shared.getProblemsFromDatabase(username) {
+	for _, problem := range shared.GetProblemsFromDatabase(username) {
 		problems = append(problems, map[string]interface{}{
 			"link":               problem.Link,
 			"titleSlug":          problem.TitleSlug,

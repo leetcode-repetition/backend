@@ -5,13 +5,15 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
+	shared "github.com/jmurrah/leetcode-repetition-shared"
 )
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	username := request.QueryStringParameters["username"]
 	problemTitleSlug := request.QueryStringParameters["problemTitleSlug"]
 
-	deleteProblemFromDatabase(username, problemTitleSlug)
+	shared.DeleteProblemFromDatabase(username, problemTitleSlug)
 
 	responseBody, _ := json.Marshal(map[string]interface{}{
 		"message": "Delete row data processed",

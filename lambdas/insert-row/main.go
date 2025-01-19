@@ -5,6 +5,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
+	shared "github.com/jmurrah/leetcode-repetition-shared"
 )
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -13,14 +15,14 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	var requestData map[string]interface{}
 	json.Unmarshal([]byte(request.Body), &requestData)
 
-	problem := LeetCodeProblem{
+	problem := shared.LeetCodeProblem{
 		Link:               requestData["link"].(string),
 		TitleSlug:          requestData["titleSlug"].(string),
 		RepeatDate:         requestData["repeatDate"].(string),
 		LastCompletionDate: requestData["lastCompletionDate"].(string),
 	}
 
-	upsertProblemIntoDatabase(username, problem)
+	shared.UpsertProblemIntoDatabase(username, problem)
 
 	responseBody, _ := json.Marshal(map[string]interface{}{
 		"message": "Inserted row data processed",
