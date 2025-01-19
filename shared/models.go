@@ -1,4 +1,4 @@
-package main
+package shared
 
 type LeetCodeProblem struct {
 	Link               string
