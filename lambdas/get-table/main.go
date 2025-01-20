@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 
+	"log"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
@@ -10,7 +12,13 @@ import (
 )
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Printf("Raw request: %+v", request)
+	log.Printf("Query parameters: %+v", request.QueryStringParameters)
+	log.Printf("Path parameters: %+v", request.PathParameters)
+
 	username := request.QueryStringParameters["username"]
+
+	log.Printf("Username: %s", username)
 
 	var problems = []map[string]interface{}{}
 	for _, problem := range shared.GetProblemsFromDatabase(username) {
@@ -22,6 +30,8 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		})
 	}
 
+	log.Printf("Problems: %+v", problems)
+
 	responseBody, _ := json.Marshal(map[string]interface{}{
 		"message": "Get table data processed",
 		"table":   problems,
@@ -31,7 +41,10 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		StatusCode: 200,
 		Body:       string(responseBody),
 		Headers: map[string]string{
-			"Content-Type": "application/json",
+			"Content-Type":                 "application/json",
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+			"Access-Control-Allow-Headers": "Content-Type",
 		},
 	}, nil
 }
