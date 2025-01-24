@@ -1,4 +1,4 @@
-module get-table
+module delete-table
 
 go 1.22.4
 
