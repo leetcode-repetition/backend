@@ -11,6 +11,12 @@ import (
 	shared "github.com/jmurrah/leetcode-repetition-shared"
 )
 
+func init() {
+	if err := shared.InitSupabaseClient(); err != nil {
+		log.Printf("Failed to initialize Supabase client: %v", err)
+	}
+}
+
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Printf("Raw request: %+v", request)
 	log.Printf("Query parameters: %+v", request.QueryStringParameters)

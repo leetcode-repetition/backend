@@ -9,8 +9,6 @@ require (
 
 require (
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/jmurrah/leetcode-repetition-shared v0.1.1 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/supabase-community/functions-go v0.1.0 // indirect
 	github.com/supabase-community/gotrue-go v1.2.1 // indirect
 	github.com/supabase-community/postgrest-go v0.0.11 // indirect
