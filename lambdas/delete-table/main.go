@@ -17,9 +17,9 @@ func init() {
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	username := request.QueryStringParameters["username"]
+	userId := request.QueryStringParameters["userId"]
 
-	shared.DeleteAllProblemsFromDatabase(username)
+	shared.DeleteAllProblemsFromDatabase(userId)
 
 	responseBody, _ := json.Marshal(map[string]interface{}{
 		"message": "Delete all rows data processed",

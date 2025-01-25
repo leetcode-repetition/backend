@@ -17,7 +17,7 @@ func init() {
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	username := request.QueryStringParameters["username"]
+	userId := request.QueryStringParameters["userId"]
 
 	var requestData map[string]interface{}
 	json.Unmarshal([]byte(request.Body), &requestData)
@@ -29,7 +29,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		LastCompletionDate: requestData["lastCompletionDate"].(string),
 	}
 
-	shared.UpsertProblemIntoDatabase(username, problem)
+	shared.UpsertProblemIntoDatabase(userId, problem)
 
 	responseBody, _ := json.Marshal(map[string]interface{}{
 		"message": "Inserted row data processed",
