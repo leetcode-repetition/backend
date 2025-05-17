@@ -1,2 +1,5 @@
 *.zip
 bootstrap
+.aws-sam
+env*
+*.yaml

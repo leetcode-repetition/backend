@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -25,6 +27,28 @@ func init() {
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	origin := request.Headers["Origin"]
+	if origin == "" {
+		origin = request.Headers["origin"]
+	}
+	if origin == "" {
+		origin = "null"
+	}
+	cors := map[string]string{
+		"Access-Control-Allow-Origin":      origin,
+		"Access-Control-Allow-Credentials": "true",
+		"Access-Control-Allow-Methods":     "OPTIONS,GET,POST,DELETE",
+		"Access-Control-Allow-Headers":     "Content-Type,x-pkce-verifier,x-auth-code,x-csrf-token,x-api-key",
+		"Vary":                             "Origin",
+	}
+
+	if request.HTTPMethod == http.MethodOptions {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 204,
+			Headers:    cors,
+		}, nil
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -39,11 +63,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		Name:    aws.String(keyName),
 		Enabled: true,
 	}
-
 	keyResult, err := apiGatewayClient.CreateApiKey(ctx, keyInput)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
+			Headers:    cors,
 			Body:       "Error creating API key",
 		}, err
 	}
@@ -53,27 +77,24 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		KeyType:     aws.String("API_KEY"),
 		UsagePlanId: aws.String(os.Getenv("USAGE_PLAN_ID")),
 	}
-
-	_, err = apiGatewayClient.CreateUsagePlanKey(ctx, planInput)
-	if err != nil {
+	if _, err = apiGatewayClient.CreateUsagePlanKey(ctx, planInput); err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
+			Headers:    cors,
 			Body:       "Error creating usage plan key",
 		}, err
 	}
 
+	responseBody, _ := json.Marshal(map[string]interface{}{
+		"message": "Generated new API key!",
+		"apiKey":  aws.ToString(keyResult.Value),
+	})
+
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Body:       aws.ToString(keyResult.Value),
-		Headers: map[string]string{
-			"Content-Type":                 "application/json",
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-			"Access-Control-Allow-Headers": "Content-Type",
-		},
+		Headers:    cors,
+		Body:       string(responseBody),
 	}, nil
 }
 
-func main() {
-	lambda.Start(handler)
-}
+func main() { lambda.Start(handler) }
