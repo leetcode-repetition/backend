@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -40,6 +41,10 @@ func init() {
 }
 
 func fetchLeetCodeUserInfo(csrfToken, leetcodeSession string) (*LeetCodeUserStatus, error) {
+	if csrfToken == "" || leetcodeSession == "" {
+		return nil, fmt.Errorf("missing required authentication tokens")
+	}
+
 	query := map[string]interface{}{
 		"query": `
             query {
@@ -61,9 +66,10 @@ func fetchLeetCodeUserInfo(csrfToken, leetcodeSession string) (*LeetCodeUserStat
 		return nil, err
 	}
 
+	// Match the exact headers used in the JavaScript implementation
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Csrf-Token", csrfToken)
-	req.Header.Set("X-Leetcode-Session", leetcodeSession)
+	req.Header.Set("x-csrftoken", csrfToken) // Note: lowercase 'x-csrftoken' instead of 'X-Csrf-Token'
+	req.Header.Set("Cookie", fmt.Sprintf("csrftoken=%s; LEETCODE_SESSION=%s", csrfToken, leetcodeSession))
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
