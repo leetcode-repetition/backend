@@ -18,7 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/apigateway"
 
-	shared "github.com/jmurrah/leetcode-repetition-shared"
+	shared "github.com/leetcode-repetition/shared"
 )
 
 var apiGatewayClient *apigateway.Client
