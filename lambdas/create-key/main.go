@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/apigateway"
+	"github.com/golang-jwt/jwt/v4"
 
 	shared "github.com/leetcode-repetition/shared"
 )
@@ -42,10 +43,6 @@ type TokenResponse struct {
 	IdToken      string `json:"id_token,omitempty"`
 }
 
-var requestBody struct {
-	RedirectURI string `json:"redirectUri"`
-}
-
 func init() {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -53,17 +50,43 @@ func init() {
 		return
 	}
 	apiGatewayClient = apigateway.NewFromConfig(cfg)
+	if err := shared.InitSupabaseClient(); err != nil {
+		log.Printf("Failed to initialize Supabase client: %v", err)
+	}
+}
+
+func extractSubjectFromIdToken(idToken string) (string, error) {
+	parser := jwt.Parser{
+		SkipClaimsValidation: true,
+	}
+
+	token, _, err := parser.ParseUnverified(idToken, jwt.MapClaims{})
+	if err != nil {
+		return "", fmt.Errorf("failed to parse ID token: %w", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", fmt.Errorf("failed to extract claims from token")
+	}
+
+	sub, ok := claims["sub"].(string)
+	if !ok || sub == "" {
+		return "", fmt.Errorf("subject claim missing from token")
+	}
+
+	return sub, nil
 }
 
 func exchangeCodeForToken(authCode, pkceVerifier string, clientID string, redirectURI string, tokenEndpoint string) (*TokenResponse, error) {
-	if authCode == "" || pkceVerifier == "" {
-		return nil, fmt.Errorf("missing required OAuth parameters")
-	}
+	clientSecret := os.Getenv("OAUTH_CLIENT_SECRET")
+
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("client_id", clientID)
+	data.Set("client_secret", clientSecret)
 	data.Set("code", authCode)
-	data.Set("redirect_uri", redirectURI) // Use the passed redirect URI
+	data.Set("redirect_uri", redirectURI)
 	data.Set("code_verifier", pkceVerifier)
 
 	req, err := http.NewRequest("POST", tokenEndpoint, bytes.NewBufferString(data.Encode()))
@@ -215,9 +238,14 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	userInfo, _ := fetchLeetCodeUserInfo(csrfToken, leetcodeSession)
 	userId := userInfo.UserId.String()
-	username := userInfo.Username.String()
+	username := userInfo.Username
 
-	apiKey := shared.GetApiKeyFromDatabase(userId, token)
+	userIdentifier, err := extractSubjectFromIdToken(token.IdToken)
+	if err != nil {
+		log.Printf("Failed to extract user ID from token: %v", err)
+	}
+
+	apiKey := shared.GetApiKeyFromDatabase(userId, userIdentifier)
 	if apiKey == "" {
 		apiKey, err = CreateNewApiKey(ctx, userId)
 		if err != nil {
@@ -227,13 +255,13 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 				Body:       "Error creating API key",
 			}, err
 		}
-		shared.UpsertApiKeyIntoDatabase(userId, token, apiKey)
+		shared.UpsertApiKeyIntoDatabase(userId, userIdentifier, apiKey)
 	}
 	log.Printf("%+v", userInfo)
 	responseBody, _ := json.Marshal(map[string]interface{}{
 		"message":  "Generated new API key!",
-		"apiKey":   aws.ToString(apiKey),
-		"username": aws.ToString(username),
+		"apiKey":   apiKey,
+		"username": username,
 	})
 
 	return events.APIGatewayProxyResponse{

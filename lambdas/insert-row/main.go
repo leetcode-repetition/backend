@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
-	shared "github.com/jmurrah/leetcode-repetition-shared"
+	shared "github.com/leetcode-repetition/shared"
 )
 
 func init() {
