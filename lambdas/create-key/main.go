@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -173,8 +174,9 @@ func fetchLeetCodeUserInfo(csrfToken, leetcodeSession string) (*LeetCodeUserStat
 	return &graphQLResponse.Data.UserStatus, nil
 }
 
-func CreateNewApiKey(ctx context.Context, userId string) (string, error) {
-	keyName := "LRE_" + userId + "_" + time.Now().Format("20060102150405")
+func CreateNewApiKey(ctx context.Context, userId string) (string, int64, error) {
+	keyCreationTime := time.Now().UnixMilli()
+	keyName := "LRE_" + userId + "_" + strconv.FormatInt(keyCreationTime, 10)
 	log.Printf("Creating API key with name: %s", keyName)
 
 	keyInput := &apigateway.CreateApiKeyInput{
@@ -184,7 +186,7 @@ func CreateNewApiKey(ctx context.Context, userId string) (string, error) {
 
 	keyResult, err := apiGatewayClient.CreateApiKey(ctx, keyInput)
 	if err != nil {
-		return "", err
+		return "e", 0, err
 	}
 
 	planInput := &apigateway.CreateUsagePlanKeyInput{
@@ -193,10 +195,10 @@ func CreateNewApiKey(ctx context.Context, userId string) (string, error) {
 		UsagePlanId: aws.String(os.Getenv("USAGE_PLAN_ID")),
 	}
 	if _, err = apiGatewayClient.CreateUsagePlanKey(ctx, planInput); err != nil {
-		return "e", err
+		return "e", 0, err
 	}
 
-	return *keyResult.Value, nil
+	return *keyResult.Value, keyCreationTime, nil
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -245,9 +247,9 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		log.Printf("Failed to extract user ID from token: %v", err)
 	}
 
-	apiKey := shared.GetApiKeyFromDatabase(userId, userIdentifier)
-	if apiKey == "" {
-		apiKey, err = CreateNewApiKey(ctx, userId)
+	apiKey, apiKeyCreationTime := shared.GetApiKeyFromDatabase(userId, userIdentifier)
+	if apiKey == "" || apiKeyCreationTime == 0 {
+		apiKey, apiKeyCreationTime, err = CreateNewApiKey(ctx, userId)
 		if err != nil {
 			return events.APIGatewayProxyResponse{
 				StatusCode: 500,
@@ -255,13 +257,16 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 				Body:       "Error creating API key",
 			}, err
 		}
-		shared.UpsertApiKeyIntoDatabase(userId, userIdentifier, apiKey)
+		shared.UpsertApiKeyIntoDatabase(userId, userIdentifier, apiKey, apiKeyCreationTime)
 	}
+
 	log.Printf("%+v", userInfo)
 	responseBody, _ := json.Marshal(map[string]interface{}{
-		"message":  "Generated new API key!",
-		"apiKey":   apiKey,
-		"username": username,
+		"message":            "Generated new API key!",
+		"apiKey":             apiKey,
+		"username":           username,
+		"userId":             userId,
+		"apiKeyCreationTime": apiKeyCreationTime,
 	})
 
 	return events.APIGatewayProxyResponse{
