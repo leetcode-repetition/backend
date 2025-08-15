@@ -249,6 +249,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	apiKey, apiKeyCreationTime := shared.GetApiKeyFromDatabase(userId, userIdentifier)
 	if apiKey == "" || apiKeyCreationTime == 0 {
+		log.Printf("creating new API key for user %s", userId)
 		apiKey, apiKeyCreationTime, err = CreateNewApiKey(ctx, userId)
 		if err != nil {
 			return events.APIGatewayProxyResponse{

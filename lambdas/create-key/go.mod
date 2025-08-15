@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.2
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.28.8
 	github.com/golang-jwt/jwt/v4 v4.5.2
-	github.com/leetcode-repetition/shared v0.1.10
+	github.com/leetcode-repetition/shared v0.1.12
 )
 
 require (

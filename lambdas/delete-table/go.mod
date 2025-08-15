@@ -4,7 +4,7 @@ go 1.22.4
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0
-	github.com/leetcode-repetition/shared v0.1.10
+	github.com/leetcode-repetition/shared v0.1.12
 )
 
 require (
